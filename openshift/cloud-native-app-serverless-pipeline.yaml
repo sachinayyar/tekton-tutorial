@@ -3,7 +3,7 @@ apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
   name: cloud-native-app-serverless
-  namespace: openshift
+  namespace: workspace-auth-demo
   labels:
     app.kubernetes.io/instance: tekton-tutorial-greeter
     app.kubernetes.io/name: tekton-tutorial-greeter
@@ -13,11 +13,15 @@ metadata:
 spec:
   description: >-
     The Pipeline to build and deploy the Hello World Java App https://github.com/redhat-scholars/tekton-tutorial-greeter as Knative Service.
+    
+    
+    # PARAMETERS
+    
   params:
     - name: IMAGE_NAME
       description: >-
         The fully qualified image name e.g example.com/tekton-tutorial/greeter
-      default: image-registry.openshift-image-registry.svc:5000/tektontutorial/greeter
+      default: quay.io/sachinayyar/tekton-tutorial-greeter
     - name: APP_PROFILE
       description: >-
         The application profile to use for building the application. In this example it should be either:
@@ -27,13 +31,17 @@ spec:
       description: The Knative Service name
     - name: GITHUB_REPO_URL
       description: The GitHub Repo of the Java Application
-      default: https://github.com/redhat-scholars/tekton-tutorial-greeter
+      default: https://github.com/sachinayyar/tekton-tutorial-greeter
     - name: GITHUB_REPO_REVISION
       description: The GitHub revision to use
       default: master
   workspaces:
     - name: source
     - name: maven-settings
+    
+    # TASKS
+    
+     # TASK 01 CLONING SOURCE CODE FROM GIT REPOSITORY
   tasks:
     - name: clone-sources
       taskRef:
@@ -51,6 +59,9 @@ spec:
       workspaces:
         - name: output
           workspace: source
+          
+  # TASK 02 TESTING JAVA CODE 
+ 
     - name: build-java-test
       taskRef:
         name: maven
@@ -70,6 +81,9 @@ spec:
           workspace: maven-settings
         - name: source
           workspace: source
+          
+         # TASK 03 BUILDING JAVA APP
+         
     - name: build-java-app
       taskRef:
         name: maven
@@ -90,6 +104,9 @@ spec:
           workspace: maven-settings
         - name: source
           workspace: source
+          
+          # TASK 04 BUILDING JAVA IMAGE
+          
     - name: build-java-app-image
       taskRef:
         name: buildah
@@ -110,6 +127,9 @@ spec:
       workspaces:
         - name: source
           workspace: source
+          
+          # TASK 05 DEPLOYING IMAGE USING KNATIVE SERVICE
+          
     - name: deploy-kn-service
       taskRef:
         name: kn
